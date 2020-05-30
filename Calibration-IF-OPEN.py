@@ -1,3 +1,6 @@
+for i in range(len(plano)):
+    QP = sym.diag(QP,1e-18*sym.eye(3)) # Parametros do plano 0.0001mm
+    QP = sym.diag(QP,1e-19)
 # -*- coding: utf-8 -*-
 """
 Created on Wed Apr 15 11:45:05 2020
@@ -14,27 +17,103 @@ import scipy.stats as st
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sn
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import inv
 # -------------------------- Entradas --------------------------
-DIR1 = "C:/Users/victo/Desktop/MODELO/Grupo4PP/" #Diretorio das observações
-DIR2 = "C:/Users/victo/Desktop/MODELO/Grupo4PP/Resultados/" #Diretorio salvamento dos arquivos
-DIR3 = "C:/Users/victo/Desktop/MODELO/" #Diretorio dos parametros
+# -- Leitura das tabelas -- 
+def obs():
+    global obs
+    obs = filedialog.askopenfilename(title = "Selecione o arquivo com as observacoes", filetype =
+                                          (("csv files","*.csv"),("all files","*.*")) )
+def vet():
+    global vet
+    vet = filedialog.askopenfilename(title = "Selecione o arquivo com vetores diretores dos planos ", filetype =
+                                      (("csv files","*.csv"),("all files","*.*")) )
+def par():
+    global par                                 
+    par = filedialog.askopenfilename(title = "Selecione o arquivo com os parametros ", filetype =
+                                      (("csv files","*.csv"),("all files","*.*")) )
+# -- Escrita das tabelas -- 
+def obsw():
+    global obsw
+    files = [('All Files', '*.*'),  
+             ('CSV', '*.csv'), 
+             ('Text Document', '*.txt')] 
+    obsw = filedialog.asksaveasfile(mode="w",filetypes = files, defaultextension = files,title = "Selecione o arquivo com os parametros " )#A foi opcao definida para escrita.
+def vetw():
+    global vetw
+    files = [('All Files', '*.*'),  
+             ('CSV', '*.csv'), 
+             ('Text Document', '*.txt')] 
+    vetw = filedialog.asksaveasfile(mode="w",filetypes = files, defaultextension = files,title = "Selecione o arquivo com os parametros " )#A foi opcao definida para escrita.
+def parw():
+    global parw     
+    files = [('All Files', '*.*'),  
+             ('CSV', '*.csv'), 
+             ('Text Document', '*.txt')] 
+    parw = filedialog.asksaveasfile(mode="w",filetypes = files, defaultextension = files,title = "Selecione o arquivo com os parametros " )#A foi opcao definida para escrita.
+# -- Caixa de dialogo com as orientações para a entrada e saida-- 
+def Dialog1(t1,t2,t3):
+    root = Tk()
+    frame = Frame(root)
+    
+    root.title("Ajustamento APs TLS")
+    Titulo = Label(frame,
+              text=t1,
+              font=("Helvetica", 15),justify=LEFT, fg="blue").pack()
+    texto1= Label(frame,
+              text=t1,
+              font=(10), fg="black").pack()
+    b1 = Button(frame,text="Arquivo", command = obs).pack()
+    texto2= Label(frame,
+              text=t2,
+              font=(10), fg="black").pack()
+    b2 = Button(frame,text="Arquivo", command = vet).pack()
+    texto3= Label(frame,
+              text=t3,
+              font=(10), fg="black").pack()
+    b3 = Button(frame,text="Arquivo", command = par).pack()
+    b4 = Button(frame,text="OK", command = root.destroy).pack()
+    frame.pack()
+    root.mainloop()
+def Dialog2(t1,t2,t3):
+    root = Tk()
+    frame = Frame(root)
+    
+    root.title("Ajustamento APs TLS")
+    Titulo = Label(frame,
+              text=t1,
+              font=("Helvetica", 15),justify=LEFT, fg="blue").pack()
+    texto1= Label(frame,
+              text=t1,
+              font=(10), fg="black").pack()
+    b1 = Button(frame,text="Arquivo", command = obsw).pack()
+    texto2= Label(frame,
+              text=t2,
+              font=(10), fg="black").pack()
+    b2 = Button(frame,text="Arquivo", command = vetw).pack()
+    texto3= Label(frame,
+              text=t3,
+              font=(10), fg="black").pack()
+    b3 = Button(frame,text="Arquivo", command = parw).pack()
+    b4 = Button(frame,text="OK", command = root.destroy).pack()
+    frame.pack()
+    root.mainloop()    
 
 # -- Atribuindo os dados das tabelas a DataFrame -- 
-observacoes = pd.read_csv(DIR1+"Observacao.csv",sep = ";")
-vetor = pd.read_csv(DIR1+"Plano.csv",sep = ";",index_col=0)
-parametros = pd.read_csv(DIR3+"ParametrosPP.csv",sep =";",index_col=0)
-
+Dialog1("Seleciono o arquivo das observações (x,y,z)","Selecione o arquivo com vetores diretores dos planos","Selecione o arquivo com os parametros")   
+observacoes = pd.read_csv(obs,sep = ";")
+vetor  = pd.read_csv(vet,sep = ";",index_col=0)
+parametros = pd.read_csv(par,sep = ";",index_col=0)
 # -- Preparar o  DataFrame -- 
-estacao = [0,8] # Estações utilizadas no processo
+estacao = [0,5] # Estações utilizadas no processo
 plano = [1,2,3,4,5,6] # Planos utilizados
-teste = str(8)
 limite = 4
-Vcorrecao = 1e-06
-Lang = 1e-06
-Lcoord = 1e-06
-Laps = 1e-06
+Vcorrecao = 0.001
+Lang = 0.0001
+Lcoord = 0.001
+Laps = 0.001
 parametros= parametros.loc[estacao] # Limpar os parametros
 vetor = vetor.loc[plano] # Limpara os vetores
 observacoes['PlanoF'] = observacoes.iloc[:,1] # Auxiliar para filtrar os planos
@@ -47,31 +126,33 @@ constante = sym.ones(1,len(plano)) # vetor de constante
 # -- Validar a entrada de dados --
 n = observacoes.shape[0]*3 # Numero de observacoes
 u = len(estacao)*6+3 # Numero de parametros livres (nao conta as restrições)
-c = observacoes.shape[0]*3 # Numero de equações de condição 
+c = observacoes.shape[0] * 3 # Numero de equações de condição 
 r = n-u # Grau de liberdade
 if r < 0  : # Testa o grau de liberdade
-    print('Vareiaveis não antendem as condiçoes minimas para o ajustamento') # Mensagem par ao usuario
+    root = Tk() # Inicia a janela de dialogo
+    messagebox.showerror('Testa o grau de liberdade', \
+          'Vareiaveis não antendem as condiçoes minimas para o ajustamento') # Mensagem par ao usuario
+    root.mainloop() # Finaliza a janela de dialogo
     exit()
 for i in estacao: # Contar o numero de pontos por plano
     observacoesest = observacoes.loc[i]
     counts = observacoesest ['Plano'].value_counts()
     if min(counts) < 3: # Testa se há mais de 3 observacoes por plano
-        print('Número de observacoes insuficientes por plano')
-        exit()
+        root = Tk()
+        messagebox.showerror('Teste do numero de observacoes por plano', \
+              'Número de observacoes insuficientes por plano')
+        root.mainloop()
 # -- Variaveis estatisticas --
 varp =sym.Matrix([1]) # Sigma a priori
-Q = 1e-9*sym.eye(observacoes.shape[0]*3) # Observações  5mm
-QC = 1e-9*sym.eye(observacoes.shape[0]) # Observações de restrição 0.005mm
-QP = 1e-9*sym.eye(len(plano)*4) # Parametros do plano 0.0001mm
-QA = 1e-11*sym.eye(3) # Angulo de orintação Espaço objeto 0.1 s
-QD = 1e-9*sym.eye(3) # Posição da Estação 0.1mm
-QADa = 1e+10 # Parametros Adicionais Constante aditiva
-QADb0 = 1e+10 # Parametros Adicionais correções angulares
-QADb1 = 1e+10
-QADc = 1e+10
-# QADb0 = 1e-06 # Parametros Adicionais correções angulares
-# QADb1 = 1e-05
-# QADc = 1e-05
+Q = 1e-06*sym.eye(observacoes.shape[0]*3) # Observações  5mm
+QC = 1e-06*sym.eye(observacoes.shape[0]) # Observações de restrição 0.005mm
+QP = 1e-06*sym.eye(len(plano)*4) # Parametros do plano 0.0001mm
+QA = 1e-06*sym.eye(3) # Angulo de orintação Espaço objeto 0.1 s
+QD = 1e-06*sym.eye(3) # Posição da Estação 0.1mm
+QADa =  0.01 # Parametros Adicionais Constante aditiva
+QADb0 = 1e-06 # Parametros Adicionais correções angulares
+QADb1 = 1e-05
+QADc = 1e-05
 QAD = sym.diag(QADa,QADb0)
 QAD = sym.diag(QAD,QADb1)
 QAD = sym.diag(QAD,QADc)
@@ -94,13 +175,18 @@ CONS = sym.ones(1,len(plano))# Vetor da contante relativa aos planos
 omega, kappa, phi = sym.symbols('omega,kappa,phi') #Rotação
 x, y, z = sym.symbols('x, y, z') #Coordenada cada ponto no espaço imagem
 X, Y, Z = sym.symbols('X, Y, Z') #Centragem da estação
-a0, b0, b1, c0 = sym.symbols('a0, b0, b1, c0') # Parametros de calibração
+a0, b1,b0, c0 = sym.symbols('a0, b1,b0, c0') # Parametros de calibração
 a, b, c, d, cons= sym.symbols('a, b, c, d,cons') #Variaveis do plano
 # -------------------------- Vetores corrigidos --------------------------
 # Atualizados a cada iteração
 obscorrigido = observacoes
 vcorrigido = vetor
 parcorrugido = parametros
+# -------------------------- Caixa de mensagem informativa --------------------------
+def info(titulo,texto):
+    root = Tk()
+    messagebox.showinfo( title = titulo , message = texto)
+    root.mainloop()
 # -------------------------- Modelo Matemático --------------------------
 def ModeloFuncional():
     #Declarando as variaveis simbolicas
@@ -119,7 +205,7 @@ def ModeloFuncional():
     teta = sym.atan2(y,x)
     ro = (x**2 + y**2 + z**2)**(0.5)
     dalpha = c0
-    dteta = b0*sym.sec(alpha)+b1*sym.tan(alpha)
+    dteta = b0+b1*sym.sin(teta)
     dro = a0
     TT = sym.Matrix([(ro - dro) * sym.cos(alpha - dalpha) * sym.cos(teta - dteta),
                     (ro - dro) * sym.cos(alpha - dalpha) * sym.sin(teta - dteta),
@@ -136,14 +222,14 @@ def derivadas():
     omega, kappa, phi = sym.symbols('omega,kappa,phi') 
     x, y, z = sym.symbols('x, y, z')
     X, Y, Z = sym.symbols('X, Y, Z')
-    a0, b0, b1, c0 = sym.symbols('a0, b0, b1, c0') # Parametros de calibração
+    a0, b1, b0, c0 = sym.symbols('a0, b1,b0, c0')
     a, b, c, d,cons = sym.symbols('a, b, c, d,cons')
     #Vetor das observacoes
     LB = sym.Matrix([(x,y,z)])
     #Vetor dos parametros subdividido (Possibilita montar a matriz A)
     PLANO = sym.Matrix([(a,b,c,d)])
     ESTACAO = sym.Matrix([(omega, kappa, phi ,X, Y, Z)])
-    APS = sym.Matrix([(a0, b0, b1, c0)])
+    APS = sym.Matrix([(a0, b1, b0, c0)])
     #Vetor das restrições
     LC = sym.Matrix([(cons)])
     #Matrizes das derivadas em relação a cada conjunto de variaveis
@@ -162,7 +248,7 @@ def Aplicar (BP,BE,BAD,CP,CE,CAD,A,AC,X0,LB,CONS):
     omega, kappa, phi = sym.symbols('omega,kappa,phi')
     x, y, z = sym.symbols('x, y, z')
     X, Y, Z = sym.symbols('X, Y, Z')
-    a0, b0, b1, c0 = sym.symbols('a0, b0, b1, c0') # Parametros de calibração
+    a0, b1,b0, c0 = sym.symbols('a0, b1,b0, c0')
     a, b, c, d,cons = sym.symbols('a, b, c, d,cons')
     #Matrizes do processo
     BP,BE,BAD,CP,CE,CAD,A,AC = derivadas()
@@ -227,7 +313,7 @@ def ModeloDireto(lbAJ,X0):
     teta = sym.atan2(y,x)  
     ro = (x**2 + y**2 + z**2)**(0.5)
     dalpha = c0
-    dteta = b0*sym.sec(alpha)+b1*sym.tan(alpha)
+    dteta = b0+b1*sym.sin(teta)
     dro = a0
     # -- Matriz de coordenadas dos pontos adicionado os APs -- 
     TT = sym.Matrix([(ro - dro) * sym.cos(alpha - dalpha) * sym.cos(teta - dteta),
@@ -242,8 +328,6 @@ def ModeloDireto(lbAJ,X0):
 # -------------------------- Inicializando das iterações --------------------------
 # -- Armazen o valor das derivas (Não é preciso passar pelas iretações) -- 
 BP1,BE1,BAD1,CP1,CE1,CAD1,A1,AC1 = derivadas()
-MENSAGEM2 = 'Criterio do limite de iterações'
-contador = 0
 for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
     # -- Inicialixação de vetores do ajustamento -- 
     fx = sym.Matrix([])
@@ -264,8 +348,8 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
     XI = sym.zeros(1,14)
     # -------------------------- Percorrer os vetores iniciasi (ponto,plano,estação) --------------------------
     for i in (estacao):# Percorrer todas as estações
-        X0[4] = sym.Matrix([(parcorrugido.loc[i,"omega"],parcorrugido.loc[i,"kappa"],parcorrugido.loc[i,"phi"],parcorrugido.loc[i,"X"],parcorrugido.loc[i,"Y"],parcorrugido.loc[i,"Z"],parcorrugido.loc[i,"a0"],parcorrugido.loc[i,"b0"],parcorrugido.loc[i,"b1"],parcorrugido.loc[i,"c0"])]) # X ajustado
-        XI[4] = sym.Matrix([(parametros.loc[i,"omega"],parametros.loc[i,"kappa"],parametros.loc[i,"phi"],parametros.loc[i,"X"],parametros.loc[i,"Y"],parametros.loc[i,"Z"],parametros.loc[i,"a0"],parametros.loc[i,"b0"],parametros.loc[i,"b1"],parametros.loc[i,"c0"])]) # X0 por estação
+        X0[4] = [(parcorrugido.loc[i,["omega","kappa","phi","X","Y","Z",'a0','b0','b1','c0']])] # X ajustado
+        XI[4] = [(parametros.loc[i,["omega","kappa","phi","X","Y","Z",'a0','b0','b1','c0']])] # X0 por estação
         # -- Matrizes atualizaveis a cada estação percorrida --
         pAJ = obscorrigido.loc[i] # Parametros Ajustado por estação
         BET = sym.Matrix([]) 
@@ -274,13 +358,13 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
         CPTT = sym.Matrix([])
         FAP = sym.Matrix([]) 
         for j in (plano):# Percorrer os planos por estação 
-            X0[0] = sym.Matrix([(vcorrigido.loc[j,'Nx'],vcorrigido.loc[j,'Ny'],vcorrigido.loc[j,'Nz'],vcorrigido.loc[j,'d'])])# Adiciona os parametros do plano
-            XI[0] = sym.Matrix([(vetor.loc[j,'Nx'],vetor.loc[j,'Ny'],vetor.loc[j,'Nz'],vetor.loc[j,'d'])])
+            X0[0] = [(vcorrigido.loc[j,['Nx','Ny','Nz','d']])]# Adiciona os parametros do plano
+            XI[0] = [(vetor.loc[j,['Nx','Ny','Nz','d']])]
             pontosAJ = pAJ.loc[(pAJ['Plano'])==j]# Pontos de cada plano Ajustado
             BPT = sym.Matrix([])
             CPT = sym.Matrix([])
             for k in range (0, pontosAJ.shape[0]):
-                lbAJ = sym.Matrix([(pontosAJ.iloc[k,1],pontosAJ.iloc[k,2],pontosAJ.iloc[k,3])])
+                lbAJ = sym.Matrix([pontosAJ.iloc[k,[1,2,3]]])
                 BP,BE,BAD,CP,CE,CAD,A,AC,f,g = Aplicar(BP1,BE1,BAD1,CP1,CE1,CAD1,A1,AC1,X0,lbAJ,CONS)
                 F = F.col_join(f)
                 G = G.col_join(g)
@@ -339,8 +423,8 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
     VX = fx + DELTA
     # -------------------------- Aplicar as correções nos veres iniciasi --------------------------
     CCP = pd.DataFrame() # Vetor para manipuras as corrções do paramentro dos planos
-    for g in range (0,vetor.shape[0]):
-        cp = pd.DataFrame({'Nx': DELTA[g*4,0],'Ny':DELTA[(g*4)+1,0],'Nz':DELTA[(g*4)+2,0],'d':DELTA[(g*4)+3,0]},index = [plano[g]])
+    for i in range (0,vetor.shape[0]):
+        cp = pd.DataFrame({'Nx': DELTA[i*4,0],'Ny':DELTA[(i*4)+1,0],'Nz':DELTA[(i*4)+2,0],'d':DELTA[(i*4)+3,0]},index = [plano[i]])
         CCP = CCP.append(cp) 
     vcorrigido = vcorrigido.add(CCP) 
     CCE = pd.DataFrame() # Vetor para manipuras as corrções do paramentro das estações
@@ -371,12 +455,11 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
         yp = float(Ajustado[j*3+1])
         zp = float(Ajustado[j*3+2])
         qq.scatter(xp, yp, zp, marker="o", color="blue")
-    for k in range (limite,int(len(Ajustado)/3)):
-        xp = float(Ajustado[k*3])
-        yp = float(Ajustado[k*3+1])
-        zp = float(Ajustado[k*3+2])
+    for i in range (limite,int(len(Ajustado)/3)):
+        xp = float(Ajustado[i*3])
+        yp = float(Ajustado[i*3+1])
+        zp = float(Ajustado[i*3+2])
         qq.scatter(xp, yp, zp, marker="^", color="red")
-    plt.savefig(DIR2+teste+"Pontos_"+str(contador)+'.png')
     plt.show() # imprime a imagem
     # -------------------------- Convergencia do sistema --------------------------
     #Teste  do vetor das correções
@@ -400,7 +483,6 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
     if iteracao == limite :
         MENSAGEIM1 = "Criterio de convergencia"
         MENSAGEM2 ="Atingiu o limite de iterações"
-    contador = contador+1
 
 # -------------------------- Posteriores --------------------------
 # Matriz estatisticas das equações
@@ -443,37 +525,35 @@ quiquadrado = r*var/varp[0]
 # -------------------------- Matrix de coorelação --------------------------
 # -- Matriz dos Coeficinetes de Correlação--
 # Tem que incrlemntar conforme o numero de planos e estações
-corrDF = pd.DataFrame(QXX)
+df = pd.DataFrame(QXX)
 #columns=['a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','a0','b0','c0'] 
-corrMatrix = corrDF.corr()
+corrMatrix = df.corr()
 # -- Imprimir a matrix --
 mask = np.triu(np.ones_like(corrMatrix, dtype=np.bool)) # Opcional
 f, ax = plt.subplots(figsize=(11, 9))
 
 #sn.heatmap(corrMatrix.abs(),cmap = "YlGnBu",mask=mask) com a mascara
 sn.heatmap(corrMatrix.abs(),cmap = "YlGnBu")
-plt.savefig(DIR2+teste+"COOR.png")
 plt.show()
 
-print(MENSAGEM2)
-# -------------------------- Teste de quiquadrado --------------------------
+##############
+
+info(MENSAGEIM1,MENSAGEM2)
+
+
 
 if (Linf < quiquadrado[0] and quiquadrado[0] < Lsup):
-    print("A hipótese basica, sigma a priori ser igual ao posteriori, não é rejeitada ")
+    info("Teste estatistico","A hipótese basica, sigma a priori ser igual ao posteriori, não é rejeitada ")
 else:
-    print("A hipótese basica, sigma a priori ser igual ao posteriori,é rejeitada ")
+    info("Teste estatistico","A hipótese basica, sigma a priori ser igual ao posteriori,é rejeitada ")
 
 # -------------------------- Salva arquivo com as correções finais --------------------------
-obscorrigido.to_csv(DIR2+teste+"OBS_CORRIGIDA.csv", sep=";")
-parcorrugido.to_csv(DIR2+teste+"PAR_CORRIGIDA.csv", sep=";")
-vcorrigido.to_csv(DIR2+teste+"VET_CORRIGIDA.csv", sep=";")
-corrMatrix.to_csv(DIR2+teste+'CORR_Matrix.csv',sep=";")
-np.savetxt(DIR2+teste+"QTT.csv", Qtt, delimiter=";")
-np.savetxt(DIR2+teste+"VARIANCIA.csv", varp, delimiter=";")
-np.savetxt(DIR2+teste+"QC.csv", QC, delimiter=";")
-np.savetxt(DIR2+teste+"DELTA.csv", DELTA, delimiter=";")
-np.savetxt(DIR2+teste+"V.csv", V, delimiter=";")
-np.savetxt(DIR2+teste+"VX.csv", VX, delimiter=";")
-np.savetxt(DIR2+teste+"VC.csv", VC, delimiter=";")
-
+Dialog2("Resultado das observalçoes corrigidas","Resultado dos vetores do plano corrigidos","Resultado dos parametros corrigidos")
+obscorrigido.to_csv(obsw, sep=";")
+parcorrugido.to_csv(parw, sep=";")
+vcorrigido.to_csv(vetw, sep=";")
+#Fecha os arquivos ja lidos
+parw.close()                              
+vetw.close()
+obsw.close()
 
