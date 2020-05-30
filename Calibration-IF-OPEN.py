@@ -1,6 +1,3 @@
-for i in range(len(plano)):
-    QP = sym.diag(QP,1e-18*sym.eye(3)) # Parametros do plano 0.0001mm
-    QP = sym.diag(QP,1e-19)
 # -*- coding: utf-8 -*-
 """
 Created on Wed Apr 15 11:45:05 2020
@@ -21,7 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import inv
 # -------------------------- Entradas --------------------------
-# -- Leitura das tabelas -- 
+# -- Leitura das tabelas --
 def obs():
     global obs
     obs = filedialog.askopenfilename(title = "Selecione o arquivo com as observacoes", filetype =
@@ -31,33 +28,33 @@ def vet():
     vet = filedialog.askopenfilename(title = "Selecione o arquivo com vetores diretores dos planos ", filetype =
                                       (("csv files","*.csv"),("all files","*.*")) )
 def par():
-    global par                                 
+    global par
     par = filedialog.askopenfilename(title = "Selecione o arquivo com os parametros ", filetype =
                                       (("csv files","*.csv"),("all files","*.*")) )
-# -- Escrita das tabelas -- 
+# -- Escrita das tabelas --
 def obsw():
     global obsw
-    files = [('All Files', '*.*'),  
-             ('CSV', '*.csv'), 
-             ('Text Document', '*.txt')] 
+    files = [('All Files', '*.*'),
+             ('CSV', '*.csv'),
+             ('Text Document', '*.txt')]
     obsw = filedialog.asksaveasfile(mode="w",filetypes = files, defaultextension = files,title = "Selecione o arquivo com os parametros " )#A foi opcao definida para escrita.
 def vetw():
     global vetw
-    files = [('All Files', '*.*'),  
-             ('CSV', '*.csv'), 
-             ('Text Document', '*.txt')] 
+    files = [('All Files', '*.*'),
+             ('CSV', '*.csv'),
+             ('Text Document', '*.txt')]
     vetw = filedialog.asksaveasfile(mode="w",filetypes = files, defaultextension = files,title = "Selecione o arquivo com os parametros " )#A foi opcao definida para escrita.
 def parw():
-    global parw     
-    files = [('All Files', '*.*'),  
-             ('CSV', '*.csv'), 
-             ('Text Document', '*.txt')] 
+    global parw
+    files = [('All Files', '*.*'),
+             ('CSV', '*.csv'),
+             ('Text Document', '*.txt')]
     parw = filedialog.asksaveasfile(mode="w",filetypes = files, defaultextension = files,title = "Selecione o arquivo com os parametros " )#A foi opcao definida para escrita.
-# -- Caixa de dialogo com as orientações para a entrada e saida-- 
+# -- Caixa de dialogo com as orientações para a entrada e saida--
 def Dialog1(t1,t2,t3):
     root = Tk()
     frame = Frame(root)
-    
+
     root.title("Ajustamento APs TLS")
     Titulo = Label(frame,
               text=t1,
@@ -80,7 +77,7 @@ def Dialog1(t1,t2,t3):
 def Dialog2(t1,t2,t3):
     root = Tk()
     frame = Frame(root)
-    
+
     root.title("Ajustamento APs TLS")
     Titulo = Label(frame,
               text=t1,
@@ -99,14 +96,14 @@ def Dialog2(t1,t2,t3):
     b3 = Button(frame,text="Arquivo", command = parw).pack()
     b4 = Button(frame,text="OK", command = root.destroy).pack()
     frame.pack()
-    root.mainloop()    
+    root.mainloop()
 
-# -- Atribuindo os dados das tabelas a DataFrame -- 
-Dialog1("Seleciono o arquivo das observações (x,y,z)","Selecione o arquivo com vetores diretores dos planos","Selecione o arquivo com os parametros")   
+# -- Atribuindo os dados das tabelas a DataFrame --
+Dialog1("Seleciono o arquivo das observações (x,y,z)","Selecione o arquivo com vetores diretores dos planos","Selecione o arquivo com os parametros")
 observacoes = pd.read_csv(obs,sep = ";")
 vetor  = pd.read_csv(vet,sep = ";",index_col=0)
 parametros = pd.read_csv(par,sep = ";",index_col=0)
-# -- Preparar o  DataFrame -- 
+# -- Preparar o  DataFrame --
 estacao = [0,5] # Estações utilizadas no processo
 plano = [1,2,3,4,5,6] # Planos utilizados
 limite = 4
@@ -118,7 +115,7 @@ parametros= parametros.loc[estacao] # Limpar os parametros
 vetor = vetor.loc[plano] # Limpara os vetores
 observacoes['PlanoF'] = observacoes.iloc[:,1] # Auxiliar para filtrar os planos
 observacoes = observacoes.set_index("PlanoF")
-observacoes = observacoes.loc[plano] 
+observacoes = observacoes.loc[plano]
 observacoes = observacoes.set_index("Estacao")
 observacoes = observacoes.loc[estacao] # Filtado de planos e estações
 # -- Constate do motelo --
@@ -126,7 +123,7 @@ constante = sym.ones(1,len(plano)) # vetor de constante
 # -- Validar a entrada de dados --
 n = observacoes.shape[0]*3 # Numero de observacoes
 u = len(estacao)*6+3 # Numero de parametros livres (nao conta as restrições)
-c = observacoes.shape[0] * 3 # Numero de equações de condição 
+c = observacoes.shape[0] * 3 # Numero de equações de condição
 r = n-u # Grau de liberdade
 if r < 0  : # Testa o grau de liberdade
     root = Tk() # Inicia a janela de dialogo
@@ -159,18 +156,18 @@ QAD = sym.diag(QAD,QADc)
 W = Q.inv()
 QXX = QP # Auxiliar
 
-for i in range(len(estacao)): # Concatenando as matrizes conforme o numero de estaçoes 
+for i in range(len(estacao)): # Concatenando as matrizes conforme o numero de estaçoes
     QXX = sym.diag(QXX,QA)
     QXX = sym.diag(QXX,QD)
 QXX = sym.diag(QXX,QAD)
 WXX = QXX.inv()
 # -- Vetores iniciais do ajustamento --
-V = sym.zeros(1,observacoes.shape[0]*3).T# Residuo observacoes 
+V = sym.zeros(1,observacoes.shape[0]*3).T# Residuo observacoes
 VC = sym.zeros(1,observacoes.shape[0]).T # Residuo Restrição
 CONS = sym.ones(1,len(plano))# Vetor da contante relativa aos planos
 # -------------------------- Variaveis do Modelo --------------------------
 # Matrizes fundamentais para o processo
-# X = [a,b,c,d,omega,kappa,phi,X,Y,Z,a0,b0,c0] 
+# X = [a,b,c,d,omega,kappa,phi,X,Y,Z,a0,b0,c0]
 # LB = [x,y,z]
 omega, kappa, phi = sym.symbols('omega,kappa,phi') #Rotação
 x, y, z = sym.symbols('x, y, z') #Coordenada cada ponto no espaço imagem
@@ -209,9 +206,9 @@ def ModeloFuncional():
     dro = a0
     TT = sym.Matrix([(ro - dro) * sym.cos(alpha - dalpha) * sym.cos(teta - dteta),
                     (ro - dro) * sym.cos(alpha - dalpha) * sym.sin(teta - dteta),
-                    (ro - dro) * sym.sin(alpha - dalpha)]) #Matriz de coordenadas dos pontos adicionado os APs 
+                    (ro - dro) * sym.sin(alpha - dalpha)]) #Matriz de coordenadas dos pontos adicionado os APs
     Vplano = sym.Matrix ([(a, b, c)]) # Parametros de definição do plano
-    #Equações f - função que descreve o problema, g - função de restrição 
+    #Equações f - função que descreve o problema, g - função de restrição
     f = sym.Matrix([(Vplano*(mj*TT+sym.Matrix([X, Y, Z])) - sym.Matrix([d]))]) # Modelo matemático
     g = sym.Matrix([(a**2+b**2+c**2)-cons]) # Função de restrição
     return f,g
@@ -219,7 +216,7 @@ def ModeloFuncional():
 def derivadas():
     f,g = ModeloFuncional()
     #Variaveis
-    omega, kappa, phi = sym.symbols('omega,kappa,phi') 
+    omega, kappa, phi = sym.symbols('omega,kappa,phi')
     x, y, z = sym.symbols('x, y, z')
     X, Y, Z = sym.symbols('X, Y, Z')
     a0, b1, b0, c0 = sym.symbols('a0, b1,b0, c0')
@@ -256,48 +253,48 @@ def Aplicar (BP,BE,BAD,CP,CE,CAD,A,AC,X0,LB,CONS):
     #Subistituição para o modelo numérico
     BP = BP.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     BE = BE.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     BAD = BAD.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     CP = CP.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     CE = CE.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     CAD = CAD.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     A = A.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     AC = AC.subs([(cons,CONS[0,0])])
     f = f.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     g = g.subs([(x,LB[0,0]), (y,LB[0,1]),(z,LB[0,2]),
                   (a,X0[0,0]), (b,X0[0,1]), (c,X0[0,2]), (d,X0[0,3]),
-                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]), 
+                  (omega,X0[0,4]), (kappa,X0[0,5]), (phi,X0[0,6]),
                   (X,X0[0,7]), (Y,X0[0,8]),(Z,X0[0,9]),
                   (a0,X0[0,10]), (b0,X0[0,11]),(b1,X0[0,12]), (c0,X0[0,13]),(cons,CONS[0,0])])
     return BP,BE,BAD,CP,CE,CAD,A,AC,f,g
@@ -309,13 +306,13 @@ def ModeloDireto(lbAJ,X0):
     ki = sym.Matrix([(sym.cos(kappa), -sym.sin(kappa), 0), (sym.sin(kappa), sym.cos(kappa), 0), (0, 0, 1)])
     R = ki * phii * wi
     #Decomposição das coordenadas cartesianas em Coordenadas polares
-    alpha = sym.atan2(z,(x**2 + y**2)**(0.5)) 
-    teta = sym.atan2(y,x)  
+    alpha = sym.atan2(z,(x**2 + y**2)**(0.5))
+    teta = sym.atan2(y,x)
     ro = (x**2 + y**2 + z**2)**(0.5)
     dalpha = c0
     dteta = b0+b1*sym.sin(teta)
     dro = a0
-    # -- Matriz de coordenadas dos pontos adicionado os APs -- 
+    # -- Matriz de coordenadas dos pontos adicionado os APs --
     TT = sym.Matrix([(ro - dro) * sym.cos(alpha - dalpha) * sym.cos(teta - dteta),
                     (ro - dro) * sym.cos(alpha - dalpha) * sym.sin(teta - dteta),
                     (ro - dro) * sym.sin(alpha - dalpha)])
@@ -326,10 +323,10 @@ def ModeloDireto(lbAJ,X0):
     return Aplicado
 
 # -------------------------- Inicializando das iterações --------------------------
-# -- Armazen o valor das derivas (Não é preciso passar pelas iretações) -- 
+# -- Armazen o valor das derivas (Não é preciso passar pelas iretações) --
 BP1,BE1,BAD1,CP1,CE1,CAD1,A1,AC1 = derivadas()
 for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
-    # -- Inicialixação de vetores do ajustamento -- 
+    # -- Inicialixação de vetores do ajustamento --
     fx = sym.Matrix([])
     F = sym.Matrix([])
     G = sym.Matrix([])
@@ -352,12 +349,12 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
         XI[4] = [(parametros.loc[i,["omega","kappa","phi","X","Y","Z",'a0','b0','b1','c0']])] # X0 por estação
         # -- Matrizes atualizaveis a cada estação percorrida --
         pAJ = obscorrigido.loc[i] # Parametros Ajustado por estação
-        BET = sym.Matrix([]) 
+        BET = sym.Matrix([])
         CET = sym.Matrix([])
         BPTT = sym.Matrix([])
         CPTT = sym.Matrix([])
-        FAP = sym.Matrix([]) 
-        for j in (plano):# Percorrer os planos por estação 
+        FAP = sym.Matrix([])
+        for j in (plano):# Percorrer os planos por estação
             X0[0] = [(vcorrigido.loc[j,['Nx','Ny','Nz','d']])]# Adiciona os parametros do plano
             XI[0] = [(vetor.loc[j,['Nx','Ny','Nz','d']])]
             pontosAJ = pAJ.loc[(pAJ['Plano'])==j]# Pontos de cada plano Ajustado
@@ -368,7 +365,7 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
                 BP,BE,BAD,CP,CE,CAD,A,AC,f,g = Aplicar(BP1,BE1,BAD1,CP1,CE1,CAD1,A1,AC1,X0,lbAJ,CONS)
                 F = F.col_join(f)
                 G = G.col_join(g)
-                # -- Processo de indexação para o ajustamento em bloco -- 
+                # -- Processo de indexação para o ajustamento em bloco --
                 BPT = BPT.col_join(BP)
                 BET = BET.col_join(BE)
                 BADT = BADT.col_join(BAD)
@@ -390,7 +387,7 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
         CETT = sym.diag(CETT,CET)
         FA = XI - X0
         fx = fx.col_join(sym.Matrix([FA[4:-4]]).T)
-    # -- Concatenar as matrizes derivadas e das funções aplicadas -- 
+    # -- Concatenar as matrizes derivadas e das funções aplicadas --
     BF = BPTTT.row_join(BETT)
     CF = CPTTT.row_join(CETT)
     BF = BF.row_join(BADT)
@@ -425,8 +422,8 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
     CCP = pd.DataFrame() # Vetor para manipuras as corrções do paramentro dos planos
     for i in range (0,vetor.shape[0]):
         cp = pd.DataFrame({'Nx': DELTA[i*4,0],'Ny':DELTA[(i*4)+1,0],'Nz':DELTA[(i*4)+2,0],'d':DELTA[(i*4)+3,0]},index = [plano[i]])
-        CCP = CCP.append(cp) 
-    vcorrigido = vcorrigido.add(CCP) 
+        CCP = CCP.append(cp)
+    vcorrigido = vcorrigido.add(CCP)
     CCE = pd.DataFrame() # Vetor para manipuras as corrções do paramentro das estações
     for j in range (0,parametros.shape[0]):
         t = ((vetor.shape[0])*4) #Pular os primeiros elementos no vetor das correções que corresponden ao plano
@@ -441,8 +438,8 @@ for iteracao in range (0,limite): # Iterações de convergencia do ajustamento
     obscorrigido = observacoes.add(CCL)
     # -------------------------- Plotar pontos ajustados --------------------------
     # Inicializa a figura para plotagem
-    fig = plt.figure() 
-    qq = fig.add_subplot(111, projection='3d') 
+    fig = plt.figure()
+    qq = fig.add_subplot(111, projection='3d')
     # Percorre o vetor para separar em X,Y,Z
     n = 2 # Numero de estações dentro do vetor ajustado
     limite =int(len(Ajustado)/(n*3)) # Marcar o inicio/fim de cada estação
@@ -504,7 +501,7 @@ QT = np.block([[Q,       np.zeros((Q.shape[0],QC.shape[1])),  np.zeros((Q.shape[
 
 AA = np.block([[AT,       np.zeros((AT.shape[0],ACT.shape[1])),  np.zeros((AT.shape[0],QXX.shape[1]))],
                [np.zeros((ACT.shape[0],AT.shape[1])),ACT, np.zeros((ACT.shape[0],QXX.shape[1]))],
-               [np.zeros((QXX.shape[0],AT.shape[1])), np.zeros((QXX.shape[0],ACT.shape[1])),np.eye(QXX.shape[0])]]) # Matriz A com todas as variaveis 
+               [np.zeros((QXX.shape[0],AT.shape[1])), np.zeros((QXX.shape[0],ACT.shape[1])),np.eye(QXX.shape[0])]]) # Matriz A com todas as variaveis
 BB = np.concatenate((BF,CF,-np.eye(QXX.shape[0])))
 #Calcular a matriz cofator para os resituos
 
@@ -512,7 +509,7 @@ Qvv = (QT.dot(np.transpose(AA).dot(WT.dot(AA.dot(QT)))))-(QT.dot(np.transpose(AA
 Qtt = QT-Qvv # Matrix a posteriori
 
 # -------------------------- Teste de variancia --------------------------
-# Calcula os valores para o teste estatistico 
+# Calcula os valores para o teste estatistico
 conf = 0.01 #intervalo de confiça para o teste estistico 99%
 Lsup = st.chi2.ppf(1-conf/2,r)
 Linf = st.chi2.ppf(conf/2,r)
@@ -526,7 +523,7 @@ quiquadrado = r*var/varp[0]
 # -- Matriz dos Coeficinetes de Correlação--
 # Tem que incrlemntar conforme o numero de planos e estações
 df = pd.DataFrame(QXX)
-#columns=['a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','a0','b0','c0'] 
+#columns=['a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','a', 'b', 'c', 'd','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','x','y','z','k','λ','ω','a0','b0','c0']
 corrMatrix = df.corr()
 # -- Imprimir a matrix --
 mask = np.triu(np.ones_like(corrMatrix, dtype=np.bool)) # Opcional
@@ -553,7 +550,6 @@ obscorrigido.to_csv(obsw, sep=";")
 parcorrugido.to_csv(parw, sep=";")
 vcorrigido.to_csv(vetw, sep=";")
 #Fecha os arquivos ja lidos
-parw.close()                              
+parw.close()
 vetw.close()
 obsw.close()
-
